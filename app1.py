@@ -17,7 +17,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 # ENV SETUP (ONLY FOR LLM, NOT EMBEDDINGS)
 # --------------------------------------------------
 load_dotenv()
-GOOGLE_API_KEY= os.getenv('GOOGLE_API_KEY')
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 
 # --------------------------------------------------
@@ -112,8 +112,11 @@ Answer:
         input_variables=["context", "question"]
     )
 
+    if not GOOGLE_API_KEY:
+        raise ValueError("GOOGLE_API_KEY is missing from the .env file.")
+
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3.5-flash-lite",
+        model="models/gemini-3.6-flash",
         temperature=1.0,
         google_api_key=GOOGLE_API_KEY
     )
@@ -143,7 +146,15 @@ def answer_question(question):
     )
 
     response = llm.invoke(final_prompt)
-    return response.content[0]['text']
+    content = response.content
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "\n".join(
+            part.get("text", "") if isinstance(part, dict) else str(part)
+            for part in content
+        ).strip()
+    return str(content)
 
 
 # --------------------------------------------------
